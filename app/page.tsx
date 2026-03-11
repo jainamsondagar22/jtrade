@@ -1,19 +1,18 @@
-import { AuthProvider } from "@/context/AuthContext";
-import "./globals.css";
-import { redirect } from "next/navigation";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  redirect("/auth");
-}
+  const router = useRouter();
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    router.push("/auth");
+  }, []);
+
   return (
-    <html lang="en">
-      <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
-      </body>
-    </html>
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <p className="text-white text-sm">Redirecting...</p>
+    </div>
   );
 }
