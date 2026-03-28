@@ -86,6 +86,15 @@ export default function Dashboard() {
               </ul>
             )}
           </div>
+          
+          <div className="mb-6">
+  
+    <a href="/charts"
+    className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded transition"
+  >
+    📈 Open Multi-Asset Chart
+  </a>
+</div>
 
           <button
             onClick={handleLogout}
