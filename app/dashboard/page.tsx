@@ -95,6 +95,11 @@ export default function Dashboard() {
     📈 Open Multi-Asset Chart
   </a>
 </div>
+    <a href="/portfolio"
+  className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded transition"
+>
+  💼 Portfolio Simulator
+</a>
 
           <button
             onClick={handleLogout}
