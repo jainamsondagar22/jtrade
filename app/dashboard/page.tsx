@@ -100,6 +100,11 @@ export default function Dashboard() {
 >
   💼 Portfolio Simulator
 </a>
+   <a href="/patterns"
+  className="inline-block bg-yellow-600 hover:bg-yellow-700 text-white font-semibold px-4 py-2 rounded transition"
+>
+  🕯️ Pattern Recognition
+</a>
 
           <button
             onClick={handleLogout}
