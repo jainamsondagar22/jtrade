@@ -110,6 +110,11 @@ export default function Dashboard() {
 >
   📊 Strategy Builder
 </a>
+<a href="/analytics"
+  className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded transition"
+>
+  📉 Analytics Dashboard
+</a>
 
           <button
             onClick={handleLogout}
