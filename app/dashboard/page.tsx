@@ -105,6 +105,11 @@ export default function Dashboard() {
 >
   🕯️ Pattern Recognition
 </a>
+  <a href="/strategies"
+  className="inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold px-4 py-2 rounded transition"
+>
+  📊 Strategy Builder
+</a>
 
           <button
             onClick={handleLogout}
