@@ -1,7 +1,7 @@
-
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import TopNav from "@/components/TopNav";
 import { OHLC, ASSET_SEEDS, DEFAULT_ASSETS, generateOHLC } from "@/lib/assetData";
 import { detectPatterns, DetectedPattern, PatternType } from "@/lib/patternRecognition";
 
@@ -39,8 +39,8 @@ function drawPatternChart(
   const cW = W - PAD.left - PAD.right;
   const cH = H - PAD.top - PAD.bottom;
 
-  // Background
-  ctx.fillStyle = "#0F172A";
+  // Background - White theme
+  ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, W, H);
 
   // Price range
@@ -56,7 +56,7 @@ function drawPatternChart(
   const candleW = Math.max(3, cW / candles.length - 2);
 
   // Grid
-  ctx.strokeStyle = "rgba(255,255,255,0.06)";
+  ctx.strokeStyle = "rgba(0,0,0,0.05)";
   ctx.lineWidth = 1;
   for (let g = 0; g <= 5; g++) {
     const y = PAD.top + (g / 5) * cH;
@@ -65,8 +65,8 @@ function drawPatternChart(
     ctx.lineTo(PAD.left + cW, y);
     ctx.stroke();
     const val = globalMax - (g / 5) * priceRange;
-    ctx.fillStyle = "rgba(255,255,255,0.35)";
-    ctx.font = "11px monospace";
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.font = "11px Inter, sans-serif";
     ctx.textAlign = "right";
     ctx.fillText(val.toFixed(2), PAD.left - 8, y + 4);
   }
@@ -76,8 +76,8 @@ function drawPatternChart(
     const idx = Math.floor(frac * (candles.length - 1));
     const x = toX(idx);
     const label = new Date(candles[idx].time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    ctx.fillStyle = "rgba(255,255,255,0.3)";
-    ctx.font = "11px monospace";
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.font = "11px Inter, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(label, x, H - 12);
   });
@@ -98,7 +98,7 @@ function drawPatternChart(
 
     // Wick
     ctx.strokeStyle = color;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(x, toY(candle.high));
     ctx.lineTo(x, toY(candle.low));
@@ -142,7 +142,7 @@ function drawPatternChart(
     // Pattern label
     if (isActive) {
       ctx.fillStyle = p.color;
-      ctx.font = "bold 11px monospace";
+      ctx.font = "bold 11px Inter, sans-serif";
       ctx.textAlign = "center";
       ctx.fillText(p.type, x, p.signal === "bearish" ? toY(candle.high) - 28 : toY(candle.low) + 30);
     }
@@ -160,21 +160,25 @@ function drawPatternChart(
       ? toY(candle.high) - boxH - 36
       : toY(candle.low) + 36;
 
-    ctx.fillStyle = "#1E293B";
+    ctx.fillStyle = "#FFFFFF"; // Tooltip bg
     ctx.strokeStyle = p.color;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.roundRect(Math.max(8, boxX), Math.max(8, boxY), boxW, boxH, 8);
     ctx.fill();
+    ctx.shadowColor = "rgba(0,0,0,0.1)";
+    ctx.shadowBlur = 10;
     ctx.stroke();
+    // remove shadow for text
+    ctx.shadowBlur = 0;
 
     ctx.fillStyle = p.color;
-    ctx.font = "bold 12px monospace";
+    ctx.font = "bold 12px Inter, sans-serif";
     ctx.textAlign = "left";
     ctx.fillText(p.type, Math.max(16, boxX + 10), Math.max(24, boxY + 20));
 
-    ctx.fillStyle = "rgba(255,255,255,0.5)";
-    ctx.font = "10px monospace";
+    ctx.fillStyle = "rgba(0,0,0,0.6)"; // text light mapped
+    ctx.font = "10px Inter, sans-serif";
     const words = p.description.split(" ");
     let line = "";
     let lineY = Math.max(24, boxY + 36);
@@ -273,29 +277,26 @@ export default function PatternsPage() {
   const visibleCount = patterns.filter((p) => activeFilters.includes(p.type)).length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col" style={{ fontFamily: "monospace" }}>
+    <div className="min-h-screen bg-slate-50 text-gray-900 flex flex-col font-sans">
 
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+      <TopNav />
+
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white shadow-sm shrink-0 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="font-bold text-lg">JTRADE</span>
-          <span className="text-white/30 text-sm">/ Pattern Recognition</span>
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="font-extrabold text-lg tracking-tight">Pattern Recognition Engine</span>
         </div>
         <div className="flex items-center gap-4">
-          <a href="/charts" className="text-white/40 hover:text-white text-sm transition">Charts</a>
-          <a href="/portfolio" className="text-white/40 hover:text-white text-sm transition">Portfolio</a>
-          <a href="/dashboard" className="text-white/40 hover:text-white text-sm transition">Dashboard</a>
           <button
             onClick={() => setIsLive((v) => !v)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold border transition-all active:scale-95 ${
               isLive
-                ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
-                : "border-white/10 bg-white/5 text-white/40"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-gray-200 bg-gray-50 text-gray-400"
             }`}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${isLive ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
-            {isLive ? "LIVE" : "PAUSED"}
+            <span className={`w-1.5 h-1.5 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-gray-300"}`} />
+            {isLive ? "LIVE SCANNING" : "SCAN PAUSED"}
           </button>
         </div>
       </div>
@@ -303,20 +304,20 @@ export default function PatternsPage() {
       <div className="flex flex-1 overflow-hidden">
 
         {/* Chart */}
-        <div className="flex-1 relative p-4">
+        <div className="flex-1 relative p-6">
 
           {/* Asset selector */}
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-3 mb-4">
             {DEFAULT_ASSETS.map((a) => (
               <button
                 key={a.id}
                 onClick={() => setSelectedAsset(a)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                className={`px-4 py-2 rounded-lg text-xs font-bold border transition-all active:scale-95 shadow-sm ${
                   selectedAsset.id === a.id
-                    ? "text-white border-white/30 bg-white/10"
-                    : "text-white/30 border-white/10 hover:text-white/60"
+                    ? "bg-white"
+                    : "text-gray-500 border-gray-200 bg-white hover:text-gray-900"
                 }`}
-                style={selectedAsset.id === a.id ? { borderColor: a.color, color: a.color, backgroundColor: a.color + "22" } : {}}
+                style={selectedAsset.id === a.id ? { borderColor: a.color, color: a.color, backgroundColor: a.color + "10" } : {}}
               >
                 {a.symbol}
               </button>
@@ -324,31 +325,31 @@ export default function PatternsPage() {
           </div>
 
           <div
-            className="w-full rounded-2xl overflow-hidden border border-white/10 bg-slate-900 cursor-crosshair"
+            className="w-full rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm cursor-crosshair pb-1"
             style={{ minHeight: 420 }}
           >
             <canvas
               ref={canvasRef}
-              className="w-full"
+              className="w-full bg-white"
               style={{ minHeight: 420, height: "calc(100vh - 280px)" }}
               onClick={handleCanvasClick}
             />
           </div>
 
-          <div className="flex justify-between mt-2">
-            <p className="text-white/20 text-xs">Click on a pattern marker to see details</p>
-            <p className="text-white/20 text-xs font-mono">TICK #{tick.toString().padStart(4, "0")}</p>
+          <div className="flex justify-between mt-3">
+            <p className="text-gray-400 text-xs font-medium">Click on a pattern marker to see details</p>
+            <p className="text-gray-400 text-xs font-mono font-bold bg-white px-2 py-0.5 rounded border border-gray-200">TICK #{tick.toString().padStart(4, "0")}</p>
           </div>
         </div>
 
         {/* Right sidebar */}
-        <div className="w-72 flex-shrink-0 border-l border-white/10 flex flex-col">
+        <div className="w-80 flex-shrink-0 border-l border-gray-200 bg-white flex flex-col z-0">
 
           {/* Pattern filters */}
-          <div className="px-4 py-3 border-b border-white/10">
+          <div className="px-5 py-4 border-b border-gray-100 bg-slate-50/50">
             <div className="flex justify-between items-center mb-3">
-              <p className="text-white/60 text-xs uppercase tracking-widest">Pattern Filters</p>
-              <span className="text-white/30 text-xs">{visibleCount} detected</span>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Active Filters</p>
+              <span className="text-gray-400 text-xs font-bold">{visibleCount} detected</span>
             </div>
             <div className="space-y-2">
               {ALL_PATTERNS.map((type) => {
@@ -360,22 +361,22 @@ export default function PatternsPage() {
                   <button
                     key={type}
                     onClick={() => toggleFilter(type)}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs transition-all ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-sm transition-all font-medium ${
                       active
-                        ? "border-white/10 bg-white/5"
-                        : "border-white/5 bg-white/[0.02] opacity-40"
+                        ? "border-gray-200 bg-white shadow-sm"
+                        : "border-gray-100 bg-gray-50 opacity-50 text-gray-400 hover:opacity-100"
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <div
-                        className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: active ? color : "#444" }}
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: active ? color : "#D1D5DB" }}
                       />
-                      <span className="text-white">{type}</span>
+                      <span className={active ? "text-gray-900" : "text-gray-500"}>{type}</span>
                     </div>
                     <span
-                      className="font-bold font-mono"
-                      style={{ color: count > 0 ? color : "rgba(255,255,255,0.2)" }}
+                      className="font-bold font-mono text-sm"
+                      style={{ color: count > 0 && active ? color : "rgba(0,0,0,0.3)" }}
                     >
                       {count}
                     </span>
@@ -386,14 +387,14 @@ export default function PatternsPage() {
           </div>
 
           {/* Recent detections */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <p className="text-white/60 text-xs uppercase tracking-widest mb-3">
-              Recent Detections
+          <div className="flex-1 overflow-y-auto p-5">
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-3">
+              Recent Activity
             </p>
             {patterns.filter((p) => activeFilters.includes(p.type)).length === 0 ? (
-              <p className="text-white/20 text-xs">No patterns detected yet.</p>
+              <p className="text-gray-400 text-xs font-medium border border-dashed border-gray-200 rounded-lg p-4 text-center">No patterns detected yet.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {[...patterns]
                   .filter((p) => activeFilters.includes(p.type))
                   .slice(-8)
@@ -401,27 +402,27 @@ export default function PatternsPage() {
                   .map((p, i) => (
                     <div
                       key={i}
-                      className="px-3 py-2 rounded-lg border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition"
+                      className="px-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm cursor-pointer hover:border-gray-300 transition-all hover:shadow"
                       onClick={() => setTooltip({ index: p.index, pattern: p })}
                     >
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center justify-between mb-1.5">
                         <span
-                          className="text-xs font-bold"
+                          className="text-xs font-extrabold"
                           style={{ color: p.color }}
                         >
                           {p.type}
                         </span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                        <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold tracking-wider ${
                           p.signal === "bullish"
-                            ? "bg-emerald-500/20 text-emerald-400"
+                            ? "bg-emerald-100 text-emerald-700"
                             : p.signal === "bearish"
-                            ? "bg-red-500/20 text-red-400"
-                            : "bg-yellow-500/20 text-yellow-400"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-yellow-100 text-yellow-700"
                         }`}>
                           {p.signal.toUpperCase()}
                         </span>
                       </div>
-                      <p className="text-white/30 text-[10px] leading-relaxed">
+                      <p className="text-gray-500 text-xs leading-relaxed font-medium">
                         {p.description.slice(0, 60)}...
                       </p>
                     </div>
@@ -431,10 +432,10 @@ export default function PatternsPage() {
           </div>
 
           {/* Legend */}
-          <div className="p-4 border-t border-white/10">
-            <p className="text-white/20 text-xs leading-relaxed">
-              ▲ Bullish signal — green triangle below candle{"\n"}
-              ▼ Bearish signal — red triangle above candle{"\n"}
+          <div className="p-5 border-t border-gray-100 bg-slate-50/50">
+            <p className="text-gray-400 text-xs leading-relaxed font-semibold">
+              <span className="text-emerald-500">▲</span> Bullish signal — below candle{"\n"}
+              <span className="text-red-500">▼</span> Bearish signal — above candle{"\n"}
               Click any marker to see explanation.
             </p>
           </div>

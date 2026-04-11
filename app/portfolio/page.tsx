@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import TopNav from "@/components/TopNav";
 import {
   Portfolio, Position, Trade,
   initPortfolio, getPortfolio,
@@ -31,7 +32,7 @@ function fmt(n: number) {
 
 
 function StatCard({
-  label, value, sub, color = "white",
+  label, value, sub, color = "currentColor",
 }: {
   label: string;
   value: string;
@@ -39,12 +40,12 @@ function StatCard({
   color?: string;
 }) {
   return (
-    <div className="bg-slate-800 rounded-xl p-4 border border-white/10">
-      <p className="text-white/40 text-xs uppercase tracking-widest mb-1">{label}</p>
-      <p className={`text-xl font-bold font-mono`} style={{ color }}>
+    <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-sm">
+      <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold mb-1">{label}</p>
+      <p className="text-2xl font-bold tracking-tight font-mono" style={{ color }}>
         {value}
       </p>
-      {sub && <p className="text-white/30 text-xs mt-1">{sub}</p>}
+      {sub && <p className="text-gray-400 text-xs mt-1 font-medium">{sub}</p>}
     </div>
   );
 }
@@ -75,45 +76,69 @@ export default function PortfolioPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleBuy = useCallback(async () => {
+  // executes buy order
+  async function handleBuyOrder() {
     if (!user || !portfolio) return;
-    const qty = parseInt(quantity);
-    if (isNaN(qty) || qty <= 0) {
-      setMessage("Please enter a valid quantity.");
+    const parsedQty = parseInt(quantity);
+    
+    if (isNaN(parsedQty) || parsedQty <= 0) {
+      setMessage("Valid quantity required.");
       return;
     }
-    const asset = DEFAULT_ASSETS.find((a) => a.symbol === symbol);
-    if (!asset) return;
-    const price = prices[symbol] ?? ASSET_SEEDS[asset.id].price;
-    setLoading(true);
-    const result = await buyStock(user.uid, symbol, asset.name, qty, price);
-    setMessage(result.message);
-    const updated = await getPortfolio(user.uid);
-    setPortfolio(updated);
-    setLoading(false);
-  }, [user, portfolio, symbol, quantity, prices]);
+    
+    const targetAsset = DEFAULT_ASSETS.find((a) => a.symbol === symbol);
+    if (!targetAsset) return;
+    
+    const currPrice = prices[symbol] ?? ASSET_SEEDS[targetAsset.id].price;
+    
+    try {
+      setLoading(true);
+      const res = await buyStock(user.uid, symbol, targetAsset.name, parsedQty, currPrice);
+      setMessage(res.message);
+      
+      // refetch to sync
+      const updatedPort = await getPortfolio(user.uid);
+      setPortfolio(updatedPort);
+    } catch (err) {
+      console.error(err);
+      setMessage("Trade failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-  const handleSell = useCallback(async () => {
+  // executes sell order
+  async function handleSellOrder() {
     if (!user || !portfolio) return;
-    const qty = parseInt(quantity);
-    if (isNaN(qty) || qty <= 0) {
-      setMessage("Please enter a valid quantity.");
+    const parsedQty = parseInt(quantity);
+    
+    if (isNaN(parsedQty) || parsedQty <= 0) {
+      setMessage("Valid quantity required.");
       return;
     }
-    const price = prices[symbol] ?? 0;
-    setLoading(true);
-    const result = await sellStock(user.uid, symbol, qty, price);
-    setMessage(result.message);
-    const updated = await getPortfolio(user.uid);
-    setPortfolio(updated);
-    setLoading(false);
-  }, [user, portfolio, symbol, quantity, prices]);
+    
+    const currPrice = prices[symbol] ?? 0;
+    
+    try {
+      setLoading(true);
+      const res = await sellStock(user.uid, symbol, parsedQty, currPrice);
+      setMessage(res.message);
+      
+      const updatedPort = await getPortfolio(user.uid);
+      setPortfolio(updatedPort);
+    } catch (err) {
+      console.error(err);
+      setMessage("Trade failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   if (!portfolio) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-          <p className="text-white/50 font-mono">Loading portfolio...</p>
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans">
+          <p className="text-gray-500 font-medium">Loading portfolio...</p>
         </div>
       </ProtectedRoute>
     );
@@ -146,72 +171,56 @@ export default function PortfolioPage() {
 
   return (
     <ProtectedRoute>
-      <div
-        className="min-h-screen bg-slate-950 text-white"
-        style={{ fontFamily: "monospace" }}
-      >
-        
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-bold text-lg">JTRADE</span>
-            <span className="text-white/30 text-sm">/ Portfolio Simulator</span>
-          </div>
-          <div className="flex gap-4">
-            <a href="/dashboard" className="text-white/40 hover:text-white text-sm transition">
-              Dashboard
-            </a>
-            <a href="/charts" className="text-white/40 hover:text-white text-sm transition">
-              Charts
-            </a>
-          </div>
-        </div>
+      <div className="min-h-screen bg-slate-50 text-gray-900 font-sans flex flex-col">
+        <TopNav />
 
-        <div className="max-w-6xl mx-auto p-6 space-y-6">
+        <div className="flex-1 max-w-7xl w-full mx-auto p-6 space-y-8">
 
-          
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">Portfolio Simulator</h1>
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard
               label="Total Value"
               value={fmt(totalValue)}
               sub="Cash + Holdings"
-              color="#60A5FA"
+              color="#111827"
             />
             <StatCard
               label="Cash Available"
               value={fmt(portfolio.cash)}
               sub="Buying power"
-              color="#34D399"
+              color="#111827"
             />
             <StatCard
               label="Unrealized P&L"
               value={fmt(totalPnL)}
               sub="Open positions"
-              color={totalPnL >= 0 ? "#34D399" : "#F87171"}
+              color={totalPnL >= 0 ? "#059669" : "#DC2626"}
             />
             <StatCard
               label="Total Return"
               value={`${totalReturn >= 0 ? "+" : ""}${totalReturnPct}%`}
               sub={fmt(totalReturn)}
-              color={totalReturn >= 0 ? "#34D399" : "#F87171"}
+              color={totalReturn >= 0 ? "#059669" : "#DC2626"}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            <div className="bg-slate-800 rounded-xl border border-white/10 p-5">
-              <h2 className="text-white font-bold text-sm uppercase tracking-widest mb-4">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 col-span-1">
+              <h2 className="text-gray-900 font-bold tracking-tight mb-4 text-lg">
                 Execute Trade
               </h2>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <label className="text-white/40 text-xs mb-1 block">Asset</label>
+                  <label className="text-gray-600 font-medium text-xs mb-1.5 block">Asset Symbol</label>
                   <select
                     value={symbol}
                     onChange={(e) => setSymbol(e.target.value)}
-                    className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-slate-50 border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 font-medium transition-all"
                   >
                     {DEFAULT_ASSETS.map((a) => (
                       <option key={a.symbol} value={a.symbol}>
@@ -222,28 +231,28 @@ export default function PortfolioPage() {
                 </div>
 
                 <div>
-                  <label className="text-white/40 text-xs mb-1 block">
+                  <label className="text-gray-600 font-medium text-xs mb-1.5 block">
                     Current Price
                   </label>
-                  <div className="bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-emerald-400 font-mono text-sm">
+                  <div className="bg-slate-50 border border-gray-200 rounded-lg px-4 py-2.5 text-emerald-600 font-mono text-sm font-bold">
                     {prices[symbol] ? fmt(prices[symbol]) : "Loading..."}
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-white/40 text-xs mb-1 block">Quantity</label>
+                  <label className="text-gray-600 font-medium text-xs mb-1.5 block">Quantity</label>
                   <input
                     type="number"
                     min="1"
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
-                    className="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-slate-50 border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 font-medium transition-all"
                   />
                 </div>
 
-                <div className="bg-slate-900 rounded-lg px-3 py-2 text-xs text-white/40">
-                  Est. Total:{" "}
-                  <span className="text-white font-mono">
+                <div className="bg-gray-100 rounded-lg px-4 py-3 text-xs text-gray-500 font-medium">
+                  Estimated Total:{" "}
+                  <span className="text-gray-900 font-mono font-bold">
                     {prices[symbol]
                       ? fmt(prices[symbol] * parseInt(quantity || "0") * 1.001)
                       : "-"}
@@ -251,46 +260,46 @@ export default function PortfolioPage() {
                   (inc. 0.1% fee)
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="grid grid-cols-2 gap-3 pt-2">
                   <button
-                    onClick={handleBuy}
+                    onClick={handleBuyOrder}
                     disabled={loading}
-                    className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold py-2 rounded-lg transition text-sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg transition-all text-sm active:scale-95 shadow-sm"
                   >
                     BUY
                   </button>
                   <button
-                    onClick={handleSell}
+                    onClick={handleSellOrder}
                     disabled={loading}
-                    className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-2 rounded-lg transition text-sm"
+                    className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-2.5 rounded-lg transition-all text-sm active:scale-95 shadow-sm"
                   >
                     SELL
                   </button>
                 </div>
 
                 {message && (
-                  <p className="text-center text-xs text-yellow-400 pt-1">{message}</p>
+                  <p className="text-center text-sm font-medium text-gray-900 pt-2 bg-gray-100 py-2 rounded-lg border border-gray-200">{message}</p>
                 )}
               </div>
             </div>
 
             
-            <div className="bg-slate-800 rounded-xl border border-white/10 p-5">
-              <h2 className="text-white font-bold text-sm uppercase tracking-widest mb-4">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 col-span-1 md:col-span-2">
+              <h2 className="text-gray-900 font-bold tracking-tight mb-4 text-lg">
                 Asset Allocation
               </h2>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 
                 <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-white/60">Cash</span>
-                    <span className="text-white font-mono">
+                  <div className="flex justify-between text-xs mb-1.5 font-bold text-gray-700">
+                    <span>CASH BALANCE</span>
+                    <span className="font-mono text-gray-900">
                       {((portfolio.cash / totalForAlloc) * 100).toFixed(1)}%
                     </span>
                   </div>
-                  <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div className="w-full bg-slate-100 rounded-full h-3 border border-gray-200 overflow-hidden">
                     <div
-                      className="h-2 rounded-full bg-blue-400"
+                      className="h-full bg-blue-500"
                       style={{ width: `${(portfolio.cash / totalForAlloc) * 100}%` }}
                     />
                   </div>
@@ -306,21 +315,21 @@ export default function PortfolioPage() {
                   const pnl = calcUnrealizedPnL({ ...p, currentPrice });
                   return (
                     <div key={p.symbol}>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-white/60">{p.symbol}</span>
-                        <span className="text-white font-mono">{pct}%</span>
+                      <div className="flex justify-between text-xs mb-1.5 font-bold text-gray-700">
+                        <span>{p.symbol}</span>
+                        <span className="font-mono text-gray-900">{pct}%</span>
                       </div>
-                      <div className="w-full bg-slate-700 rounded-full h-2">
+                      <div className="w-full bg-slate-100 rounded-full h-3 border border-gray-200 overflow-hidden">
                         <div
-                          className="h-2 rounded-full transition-all"
+                          className="h-full transition-all"
                           style={{ width: `${pct}%`, backgroundColor: color }}
                         />
                       </div>
-                      <div className="flex justify-between text-[10px] mt-0.5">
-                        <span className="text-white/30">
+                      <div className="flex justify-between text-xs mt-1 font-medium text-gray-500">
+                        <span>
                           {p.quantity} shares @ {fmt(p.avgCost)}
                         </span>
-                        <span className={pnl >= 0 ? "text-emerald-400" : "text-red-400"}>
+                        <span className={`font-mono font-bold ${pnl >= 0 ? "text-emerald-600" : "text-red-600"}`}>
                           {pnl >= 0 ? "+" : ""}{fmt(pnl)}
                         </span>
                       </div>
@@ -329,7 +338,7 @@ export default function PortfolioPage() {
                 })}
 
                 {portfolio.positions.length === 0 && (
-                  <p className="text-white/20 text-xs text-center py-4">
+                  <p className="text-gray-400 text-sm text-center py-4 font-medium border border-dashed border-gray-200 rounded-xl mt-4">
                     No positions yet. Buy a stock to get started.
                   </p>
                 )}
@@ -339,21 +348,23 @@ export default function PortfolioPage() {
 
           
           {portfolio.positions.length > 0 && (
-            <div className="bg-slate-800 rounded-xl border border-white/10 p-5">
-              <h2 className="text-white font-bold text-sm uppercase tracking-widest mb-4">
-                Current Holdings
-              </h2>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="p-5 border-b border-gray-100">
+                <h2 className="text-gray-900 font-bold tracking-tight text-lg">
+                  Current Holdings
+                </h2>
+              </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-white/40 text-xs border-b border-white/10">
-                      <th className="text-left pb-2">Symbol</th>
-                      <th className="text-right pb-2">Qty</th>
-                      <th className="text-right pb-2">Avg Cost</th>
-                      <th className="text-right pb-2">Current</th>
-                      <th className="text-right pb-2">Value</th>
-                      <th className="text-right pb-2">P&L</th>
-                      <th className="text-right pb-2">P&L %</th>
+                <table className="w-full text-sm text-gray-600">
+                  <thead className="bg-slate-50 border-b border-gray-200">
+                    <tr className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                      <th className="text-left py-3 px-5">Symbol</th>
+                      <th className="text-right py-3 px-5">Qty</th>
+                      <th className="text-right py-3 px-5">Avg Cost</th>
+                      <th className="text-right py-3 px-5">Current</th>
+                      <th className="text-right py-3 px-5">Value</th>
+                      <th className="text-right py-3 px-5">P&L</th>
+                      <th className="text-right py-3 px-5">P&L %</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -364,16 +375,16 @@ export default function PortfolioPage() {
                       const pnlPct = (((currentPrice - p.avgCost) / p.avgCost) * 100).toFixed(2);
                       const isUp = pnl >= 0;
                       return (
-                        <tr key={p.symbol} className="border-b border-white/5 hover:bg-white/5 transition">
-                          <td className="py-3 font-bold text-white">{p.symbol}</td>
-                          <td className="py-3 text-right text-white/70">{p.quantity}</td>
-                          <td className="py-3 text-right text-white/70 font-mono">{fmt(p.avgCost)}</td>
-                          <td className="py-3 text-right font-mono text-white">{fmt(currentPrice)}</td>
-                          <td className="py-3 text-right font-mono text-white">{fmt(value)}</td>
-                          <td className={`py-3 text-right font-mono ${isUp ? "text-emerald-400" : "text-red-400"}`}>
+                        <tr key={p.symbol} className="border-b border-gray-100 hover:bg-slate-50 transition-colors">
+                          <td className="py-3 px-5 font-bold text-gray-900">{p.symbol}</td>
+                          <td className="py-3 px-5 text-right font-medium">{p.quantity}</td>
+                          <td className="py-3 px-5 text-right font-mono text-gray-500">{fmt(p.avgCost)}</td>
+                          <td className="py-3 px-5 text-right font-mono font-semibold text-gray-900">{fmt(currentPrice)}</td>
+                          <td className="py-3 px-5 text-right font-mono font-semibold text-gray-900">{fmt(value)}</td>
+                          <td className={`py-3 px-5 text-right font-mono font-bold ${isUp ? "text-emerald-600" : "text-red-600"}`}>
                             {isUp ? "+" : ""}{fmt(pnl)}
                           </td>
-                          <td className={`py-3 text-right font-mono ${isUp ? "text-emerald-400" : "text-red-400"}`}>
+                          <td className={`py-3 px-5 text-right font-mono font-bold ${isUp ? "text-emerald-600" : "text-red-600"}`}>
                             {isUp ? "+" : ""}{pnlPct}%
                           </td>
                         </tr>
@@ -387,43 +398,45 @@ export default function PortfolioPage() {
 
           
           {portfolio.trades.length > 0 && (
-            <div className="bg-slate-800 rounded-xl border border-white/10 p-5">
-              <h2 className="text-white font-bold text-sm uppercase tracking-widest mb-4">
-                Trade History
-              </h2>
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-8">
+              <div className="p-5 border-b border-gray-100">
+                <h2 className="text-gray-900 font-bold tracking-tight text-lg">
+                  Trade History
+                </h2>
+              </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-white/40 text-xs border-b border-white/10">
-                      <th className="text-left pb-2">Time</th>
-                      <th className="text-left pb-2">Type</th>
-                      <th className="text-left pb-2">Symbol</th>
-                      <th className="text-right pb-2">Qty</th>
-                      <th className="text-right pb-2">Price</th>
-                      <th className="text-right pb-2">Fee</th>
-                      <th className="text-right pb-2">Total</th>
+                <table className="w-full text-sm text-gray-600 mb-4">
+                  <thead className="bg-slate-50 border-b border-gray-200">
+                    <tr className="text-xs uppercase tracking-wider text-gray-500 font-semibold">
+                      <th className="text-left py-3 px-5">Time</th>
+                      <th className="text-left py-3 px-5">Type</th>
+                      <th className="text-left py-3 px-5">Symbol</th>
+                      <th className="text-right py-3 px-5">Qty</th>
+                      <th className="text-right py-3 px-5">Price</th>
+                      <th className="text-right py-3 px-5">Fee</th>
+                      <th className="text-right py-3 px-5">Total</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[...portfolio.trades].reverse().map((t: Trade) => (
-                      <tr key={t.id} className="border-b border-white/5 hover:bg-white/5 transition">
-                        <td className="py-2 text-white/40 text-xs">
-                          {new Date(t.timestamp).toLocaleTimeString()}
+                      <tr key={t.id} className="border-b border-gray-100 hover:bg-slate-50 transition-colors">
+                        <td className="py-3 px-5 text-gray-400 font-medium text-xs">
+                          {new Date(t.timestamp).toLocaleString()}
                         </td>
-                        <td className="py-2">
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                        <td className="py-3 px-5">
+                          <span className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-md border ${
                             t.type === "BUY"
-                              ? "bg-emerald-500/20 text-emerald-400"
-                              : "bg-red-500/20 text-red-400"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-red-50 text-red-700 border-red-200"
                           }`}>
                             {t.type}
                           </span>
                         </td>
-                        <td className="py-2 font-bold text-white">{t.symbol}</td>
-                        <td className="py-2 text-right text-white/70">{t.quantity}</td>
-                        <td className="py-2 text-right font-mono text-white/70">{fmt(t.price)}</td>
-                        <td className="py-2 text-right font-mono text-red-400">-{fmt(t.fee)}</td>
-                        <td className="py-2 text-right font-mono text-white">{fmt(t.total)}</td>
+                        <td className="py-3 px-5 font-bold text-gray-900">{t.symbol}</td>
+                        <td className="py-3 px-5 text-right font-medium">{t.quantity}</td>
+                        <td className="py-3 px-5 text-right font-mono text-gray-600">{fmt(t.price)}</td>
+                        <td className="py-3 px-5 text-right font-mono text-red-500 font-medium">-{fmt(t.fee)}</td>
+                        <td className="py-3 px-5 text-right font-mono font-bold text-gray-900">{fmt(t.total)}</td>
                       </tr>
                     ))}
                   </tbody>

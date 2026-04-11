@@ -131,39 +131,42 @@ function isEveningStar(a: OHLC, b: OHLC, c: OHLC): boolean {
   return aBullish && bSmall && cBearish && c.close < (a.open + a.close) / 2;
 }
 
-// Main detection function — scans all candles and returns detected patterns
+// Loops through the candles and spits out any registered patterns
 export function detectPatterns(candles: OHLC[]): DetectedPattern[] {
-  const patterns: DetectedPattern[] = [];
+  const foundPatterns: DetectedPattern[] = [];
 
-  for (let i = 0; i < candles.length; i++) {
-    const c = candles[i];
-    const prev = i > 0 ? candles[i - 1] : null;
-    const prev2 = i > 1 ? candles[i - 2] : null;
+  for (let idx = 0; idx < candles.length; idx++) {
+    const current = candles[idx];
+    const prev = idx > 0 ? candles[idx - 1] : null;
+    const prevPrev = idx > 1 ? candles[idx - 2] : null;
 
-    if (isDoji(c)) {
-      patterns.push({ type: "Doji", index: i, ...PATTERN_INFO["Doji"] });
-    } else if (isHammer(c)) {
-      patterns.push({ type: "Hammer", index: i, ...PATTERN_INFO["Hammer"] });
-    } else if (isShootingStar(c)) {
-      patterns.push({ type: "Shooting Star", index: i, ...PATTERN_INFO["Shooting Star"] });
+    // Single candle rules
+    if (isDoji(current)) {
+      foundPatterns.push({ type: "Doji", index: idx, ...PATTERN_INFO["Doji"] });
+    } else if (isHammer(current)) {
+      foundPatterns.push({ type: "Hammer", index: idx, ...PATTERN_INFO["Hammer"] });
+    } else if (isShootingStar(current)) {
+      foundPatterns.push({ type: "Shooting Star", index: idx, ...PATTERN_INFO["Shooting Star"] });
     }
 
+    // Two-candle rules
     if (prev) {
-      if (isBullishEngulfing(prev, c)) {
-        patterns.push({ type: "Bullish Engulfing", index: i, ...PATTERN_INFO["Bullish Engulfing"] });
-      } else if (isBearishEngulfing(prev, c)) {
-        patterns.push({ type: "Bearish Engulfing", index: i, ...PATTERN_INFO["Bearish Engulfing"] });
+      if (isBullishEngulfing(prev, current)) {
+        foundPatterns.push({ type: "Bullish Engulfing", index: idx, ...PATTERN_INFO["Bullish Engulfing"] });
+      } else if (isBearishEngulfing(prev, current)) {
+        foundPatterns.push({ type: "Bearish Engulfing", index: idx, ...PATTERN_INFO["Bearish Engulfing"] });
       }
     }
 
-    if (prev && prev2) {
-      if (isMorningStar(prev2, prev, c)) {
-        patterns.push({ type: "Morning Star", index: i, ...PATTERN_INFO["Morning Star"] });
-      } else if (isEveningStar(prev2, prev, c)) {
-        patterns.push({ type: "Evening Star", index: i, ...PATTERN_INFO["Evening Star"] });
+    // Three-candle rules
+    if (prev && prevPrev) {
+      if (isMorningStar(prevPrev, prev, current)) {
+        foundPatterns.push({ type: "Morning Star", index: idx, ...PATTERN_INFO["Morning Star"] });
+      } else if (isEveningStar(prevPrev, prev, current)) {
+        foundPatterns.push({ type: "Evening Star", index: idx, ...PATTERN_INFO["Evening Star"] });
       }
     }
   }
 
-  return patterns;
+  return foundPatterns;
 }

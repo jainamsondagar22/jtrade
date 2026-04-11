@@ -28,28 +28,31 @@ export interface BacktestResult {
   totalTrades: number;
 }
 
-// Simple Moving Average — average of last N closing prices
+// calculates simple moving avg (could be optimized if we have huge datasets, fine for now)
 export function calcSMA(prices: number[], period: number): IndicatorPoint[] {
-  const result: IndicatorPoint[] = [];
+  const smas: IndicatorPoint[] = [];
   for (let i = period - 1; i < prices.length; i++) {
-    const slice = prices.slice(i - period + 1, i + 1);
-    const avg = slice.reduce((a, b) => a + b, 0) / period;
-    result.push({ index: i, value: parseFloat(avg.toFixed(4)) });
+    const windowSlice = prices.slice(i - period + 1, i + 1);
+    const sum = windowSlice.reduce((acc, val) => acc + val, 0);
+    smas.push({ index: i, value: parseFloat((sum / period).toFixed(4)) });
   }
-  return result;
+  return smas;
 }
 
-// Exponential Moving Average — gives more weight to recent prices
+// EMA gives more weight to recent prices
 export function calcEMA(prices: number[], period: number): IndicatorPoint[] {
-  const result: IndicatorPoint[] = [];
-  const k = 2 / (period + 1);
-  let ema = prices.slice(0, period).reduce((a, b) => a + b, 0) / period;
-  result.push({ index: period - 1, value: parseFloat(ema.toFixed(4)) });
-  for (let i = period; i < prices.length; i++) {
-    ema = prices[i] * k + ema * (1 - k);
-    result.push({ index: i, value: parseFloat(ema.toFixed(4)) });
+  const emas: IndicatorPoint[] = [];
+  const multiplier = 2 / (period + 1);
+  
+  // start with simple avg for the initial value
+  let currentEma = prices.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  emas.push({ index: period - 1, value: parseFloat(currentEma.toFixed(4)) });
+  
+  for (let idx = period; idx < prices.length; idx++) {
+    currentEma = (prices[idx] - currentEma) * multiplier + currentEma; // standard formula
+    emas.push({ index: idx, value: parseFloat(currentEma.toFixed(4)) });
   }
-  return result;
+  return emas;
 }
 
 // Bollinger Bands — middle SMA with upper and lower bands at N standard deviations
@@ -74,32 +77,40 @@ export function calcBollingerBands(
   return result;
 }
 
-// RSI — Relative Strength Index, measures overbought/oversold conditions 0-100
+// RSI - measures overbought/oversold conditions (0-100)
+// Kinda messy but standard wilder's smoothing method
 export function calcRSI(prices: number[], period = 14): IndicatorPoint[] {
-  const result: IndicatorPoint[] = [];
-  if (prices.length < period + 1) return result;
+  const rsiVals: IndicatorPoint[] = [];
+  if (prices.length < period + 1) return rsiVals;
 
-  const changes = prices.slice(1).map((p, i) => p - prices[i]);
-  let gains = changes.slice(0, period).filter((c) => c > 0);
-  let losses = changes.slice(0, period).filter((c) => c < 0).map(Math.abs);
+  // calc price diffs
+  const diffs = prices.slice(1).map((p, idx) => p - prices[idx]);
+  
+  let gains = diffs.slice(0, period).filter((d) => d > 0);
+  let losses = diffs.slice(0, period).filter((d) => d < 0).map(Math.abs);
 
-  let avgGain = gains.reduce((a, b) => a + b, 0) / period;
-  let avgLoss = losses.reduce((a, b) => a + b, 0) / period;
+  let avgGain = gains.reduce((sum, val) => sum + val, 0) / period;
+  let avgLoss = losses.reduce((sum, val) => sum + val, 0) / period;
 
-  const rsi = (ag: number, al: number) =>
-    al === 0 ? 100 : parseFloat((100 - 100 / (1 + ag / al)).toFixed(2));
+  const calculateRSIValue = (ag: number, al: number) => {
+    if (al === 0) return 100;
+    const rs = ag / al;
+    return parseFloat((100 - 100 / (1 + rs)).toFixed(2));
+  };
 
-  result.push({ index: period, value: rsi(avgGain, avgLoss) });
+  rsiVals.push({ index: period, value: calculateRSIValue(avgGain, avgLoss) });
 
-  for (let i = period; i < changes.length; i++) {
-    const gain = changes[i] > 0 ? changes[i] : 0;
-    const loss = changes[i] < 0 ? Math.abs(changes[i]) : 0;
-    avgGain = (avgGain * (period - 1) + gain) / period;
-    avgLoss = (avgLoss * (period - 1) + loss) / period;
-    result.push({ index: i + 1, value: rsi(avgGain, avgLoss) });
+  for (let i = period; i < diffs.length; i++) {
+    const currentGain = diffs[i] > 0 ? diffs[i] : 0;
+    const currentLoss = diffs[i] < 0 ? Math.abs(diffs[i]) : 0;
+    
+    avgGain = (avgGain * (period - 1) + currentGain) / period;
+    avgLoss = (avgLoss * (period - 1) + currentLoss) / period;
+    
+    rsiVals.push({ index: i + 1, value: calculateRSIValue(avgGain, avgLoss) });
   }
 
-  return result;
+  return rsiVals;
 }
 
 // Backtest engine — runs a strategy against price data and returns results

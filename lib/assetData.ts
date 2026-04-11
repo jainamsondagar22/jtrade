@@ -24,19 +24,22 @@ export interface DataPoint {
   value: number;
 }
 
+// generates a fake historical price series based on random walk
 function generatePriceSeries(
   startPrice: number,
   points: number,
   volatility: number,
   trend: number
 ): number[] {
-  const prices: number[] = [startPrice];
+  const simPrices: number[] = [startPrice];
+  
   for (let i = 1; i < points; i++) {
-    const change = (Math.random() - 0.5) * 2 * volatility + trend;
-    const next = Math.max(prices[i - 1] * (1 + change / 100), 0.01);
-    prices.push(parseFloat(next.toFixed(2)));
+    // some basic random movement logic
+    const pctChange = (Math.random() - 0.5) * 2 * volatility + trend;
+    const nextPrice = Math.max(simPrices[i - 1] * (1 + pctChange / 100), 0.01);
+    simPrices.push(parseFloat(nextPrice.toFixed(2)));
   }
-  return prices;
+  return simPrices;
 }
 
 export function generateOHLC(

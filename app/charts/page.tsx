@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import TopNav from "@/components/TopNav";
 import {
   AssetConfig, ChartType, OHLC, DataPoint,
   DEFAULT_ASSETS, ASSET_SEEDS,
@@ -41,7 +42,8 @@ function drawChart(
   const cW = W - PAD.left - PAD.right;
   const cH = H - PAD.top - PAD.bottom;
 
-  ctx.fillStyle = "#0F172A";
+  // White theme canvas background
+  ctx.fillStyle = "#FFFFFF";
   ctx.fillRect(0, 0, W, H);
 
   const visible = assets.filter((a) => a.visible);
@@ -70,7 +72,8 @@ function drawChart(
   const toY = (v: number) => PAD.top + cH - ((v - globalMin) / range) * cH;
   const toX = (i: number, total: number) => PAD.left + (i / (total - 1)) * cW;
 
-  ctx.strokeStyle = "rgba(255,255,255,0.06)";
+  // Grid lines
+  ctx.strokeStyle = "rgba(0,0,0,0.05)";
   ctx.lineWidth = 1;
   for (let g = 0; g <= 5; g++) {
     const y = PAD.top + (g / 5) * cH;
@@ -79,7 +82,7 @@ function drawChart(
     ctx.lineTo(PAD.left + cW, y);
     ctx.stroke();
     const val = globalMax - (g / 5) * range;
-    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
     ctx.font = "11px monospace";
     ctx.textAlign = "right";
     ctx.fillText(val.toFixed(val > 1000 ? 0 : 2), PAD.left - 8, y + 4);
@@ -96,7 +99,7 @@ function drawChart(
       const idx = Math.floor(frac * (times.length - 1));
       const x = toX(idx, times.length);
       const label = new Date(times[idx]).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.fillStyle = "rgba(0,0,0,0.4)";
       ctx.font = "11px monospace";
       ctx.textAlign = "center";
       ctx.fillText(label, x, H - 12);
@@ -115,7 +118,7 @@ function drawChart(
         const isUp = candle.close >= candle.open;
         const color = isUp ? "#10B981" : "#EF4444";
         ctx.strokeStyle = color;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(x, toY(candle.high));
         ctx.lineTo(x, toY(candle.low));
@@ -129,7 +132,7 @@ function drawChart(
     } else if (asset.chartType === "line") {
       const data = store.line;
       const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + cH);
-      grad.addColorStop(0, hexToRgba(asset.color, 0.25));
+      grad.addColorStop(0, hexToRgba(asset.color, 0.15));
       grad.addColorStop(1, hexToRgba(asset.color, 0));
       ctx.beginPath();
       data.forEach((p, i) => {
@@ -142,7 +145,7 @@ function drawChart(
       ctx.fill();
       ctx.beginPath();
       ctx.strokeStyle = asset.color;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;
       ctx.lineJoin = "round";
       data.forEach((p, i) => {
         i === 0 ? ctx.moveTo(toX(i, data.length), toY(p.value)) : ctx.lineTo(toX(i, data.length), toY(p.value));
@@ -150,7 +153,7 @@ function drawChart(
       ctx.stroke();
       const last = data[data.length - 1];
       ctx.beginPath();
-      ctx.arc(toX(data.length - 1, data.length), toY(last.value), 4, 0, Math.PI * 2);
+      ctx.arc(toX(data.length - 1, data.length), toY(last.value), 4.5, 0, Math.PI * 2);
       ctx.fillStyle = asset.color;
       ctx.fill();
 
@@ -161,7 +164,7 @@ function drawChart(
       data.forEach((p, i) => {
         const x = toX(i, data.length);
         const y = toY(p.value);
-        ctx.fillStyle = hexToRgba(asset.color, 0.7);
+        ctx.fillStyle = hexToRgba(asset.color, 0.85);
         ctx.fillRect(x - barW / 2, y, barW, baseline - y);
       });
     }
@@ -176,7 +179,7 @@ function drawChart(
         : store.line[store.line.length - 1]?.value;
     if (last === undefined) return;
     ctx.fillStyle = asset.color;
-    ctx.font = "bold 11px monospace";
+    ctx.font = "bold 11px Inter, sans-serif";
     ctx.textAlign = "left";
     ctx.fillText(
       last > 1000 ? last.toFixed(0) : last.toFixed(2),
@@ -211,35 +214,35 @@ function AssetRow({
   const up = pct !== null ? parseFloat(pct) >= 0 : true;
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${
-      asset.visible ? "border-white/10 bg-white/5" : "border-white/5 bg-white/[0.02] opacity-50"
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all shadow-sm ${
+      asset.visible ? "border-gray-200 bg-white" : "border-gray-100 bg-gray-50 opacity-60"
     }`}>
       <button
         onClick={() => onToggle(asset.id)}
-        className="w-4 h-4 rounded-full flex-shrink-0 transition-all"
+        className="w-4 h-4 rounded-full flex-shrink-0 transition-all hover:scale-110 active:scale-95"
         style={{ backgroundColor: asset.visible ? asset.color : "transparent", border: `2px solid ${asset.color}` }}
       />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-white font-bold text-sm font-mono">{asset.symbol}</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-            asset.type === "crypto" ? "bg-amber-500/20 text-amber-400"
-            : asset.type === "bond" ? "bg-red-500/20 text-red-400"
-            : "bg-blue-500/20 text-blue-400"
+          <span className="text-gray-900 font-extrabold text-sm">{asset.symbol}</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold tracking-widest ${
+            asset.type === "crypto" ? "bg-amber-100 text-amber-700"
+            : asset.type === "bond" ? "bg-red-100 text-red-700"
+            : "bg-blue-100 text-blue-700"
           }`}>
             {asset.type.toUpperCase()}
           </span>
         </div>
-        <div className="text-white/40 text-xs truncate">{asset.name}</div>
+        <div className="text-gray-500 text-xs font-medium truncate">{asset.name}</div>
       </div>
       <div className="text-right mr-2">
         {last !== undefined && (
           <>
-            <div className="text-white text-sm font-mono font-semibold">
+            <div className="text-gray-900 text-sm font-mono font-bold">
               {last > 1000 ? last.toLocaleString(undefined, { maximumFractionDigits: 0 }) : last.toFixed(2)}
             </div>
             {pct && (
-              <div className={`text-xs font-mono ${up ? "text-emerald-400" : "text-red-400"}`}>
+              <div className={`text-xs font-mono font-semibold ${up ? "text-emerald-600" : "text-red-500"}`}>
                 {up ? "▲" : "▼"} {Math.abs(parseFloat(pct))}%
               </div>
             )}
@@ -251,10 +254,10 @@ function AssetRow({
           <button
             key={t}
             onClick={() => onChartType(asset.id, t)}
-            className="text-[10px] px-2 py-1 rounded font-mono transition-all"
+            className="text-[10px] px-2 py-1 rounded-md font-bold transition-all hover:bg-gray-100"
             style={asset.chartType === t
-              ? { backgroundColor: asset.color + "33", color: asset.color }
-              : { color: "rgba(255,255,255,0.3)" }
+              ? { backgroundColor: asset.color + "22", color: asset.color }
+              : { color: "rgba(0,0,0,0.3)" }
             }
           >
             {t === "line" ? "LINE" : t === "bar" ? "BAR" : "OHLC"}
@@ -333,42 +336,43 @@ export default function ChartsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col" style={{ fontFamily: "monospace" }}>
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+    <div className="min-h-screen bg-slate-50 text-gray-900 flex flex-col font-sans">
+      <TopNav />
+      
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-white font-bold text-lg tracking-tight">JTRADE</span>
-          <span className="text-white/30 text-sm">/ Multi-Asset Chart</span>
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="font-extrabold text-lg tracking-tight">Multi-Asset Chart</span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-white/40 text-xs">{assets.filter((a) => a.visible).length} asset(s) visible</span>
+          <span className="text-gray-500 text-xs font-semibold">{assets.filter((a) => a.visible).length} asset(s) visible</span>
           <button
             onClick={() => setIsLive((v) => !v)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-              isLive ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400" : "border-white/10 bg-white/5 text-white/40"
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold border transition-all active:scale-95 ${
+              isLive ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-gray-200 bg-gray-50 text-gray-400"
             }`}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${isLive ? "bg-emerald-400 animate-pulse" : "bg-white/30"}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${isLive ? "bg-emerald-500 animate-pulse" : "bg-gray-300"}`} />
             {isLive ? "LIVE" : "PAUSED"}
           </button>
         </div>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        <div className="flex-1 relative p-4">
-          <div className="w-full h-full rounded-2xl overflow-hidden border border-white/10 bg-slate-900" style={{ minHeight: 420 }}>
+        <div className="flex-1 relative p-6">
+          <div className="w-full h-full rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm" style={{ minHeight: 420 }}>
             <canvas ref={canvasRef} className="w-full h-full" style={{ minHeight: 420 }} />
           </div>
-          <div className="absolute bottom-8 right-8 text-white/20 text-xs font-mono">
+          <div className="absolute bottom-10 right-10 text-gray-400 text-xs font-mono font-bold bg-white/80 px-2 py-1 rounded backdrop-blur-sm border border-gray-200">
             TICK #{tick.toString().padStart(4, "0")}
           </div>
         </div>
 
-        <div className="w-80 flex-shrink-0 border-l border-white/10 flex flex-col">
-          <div className="px-4 py-3 border-b border-white/10">
-            <p className="text-white/60 text-xs uppercase tracking-widest">Assets</p>
+        <div className="w-80 flex-shrink-0 border-l border-gray-200 bg-white flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-100 bg-slate-50/50">
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Available Assets</p>
           </div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {assets.map((asset) => (
               <AssetRow
                 key={asset.id}
@@ -379,8 +383,8 @@ export default function ChartsPage() {
               />
             ))}
           </div>
-          <div className="p-4 border-t border-white/10">
-            <p className="text-white/20 text-xs">Click the colour dot to toggle visibility. Data refreshes every 2s.</p>
+          <div className="p-5 border-t border-gray-100 bg-slate-50/50">
+            <p className="text-gray-400 text-xs leading-relaxed font-medium">Click the colour dot to toggle visibility. Data stream refreshes every 2s.</p>
           </div>
         </div>
       </div>
