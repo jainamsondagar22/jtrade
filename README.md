@@ -1,40 +1,15 @@
-# JTrade (Advanced Fintech Platform)
+JTrade
+6/6 Tasks Executed:
+1. The platform should include a user login system implemented using Firebase or another secure authentication service, allowing users to create accounts and log in safely. Once authenticated, the system should save and persist user-specific data, including preferences, watchlists, portfolio holdings, and applied indicators, in a database so that all user data is accessible across sessions and devices. Data persistence should ensure that any changes made by the user—such as modifying a watchlist, updating portfolio trades, or customizing charts—are immediately reflected and consistently available whenever the user logs back in. This feature will provide hands-on experience with full-stack integration, state management, and data synchronization, creating a seamless and personalized user experience.
 
-JTrade is a highly sophisticated, enterprise-grade Next.js React application featuring live algorithmic pattern recognition, complex portfolio management, and dynamic automated trading simulations powered by custom algorithms. 
+2. The platform should support a Multi-Asset Chart feature that allows users to display and compare multiple assets on the same chart, such as stocks, bonds, and cryptocurrencies, using randomly generated data sets. Users should be able to overlay different types of data, toggle visibility of individual assets, and customize chart types (e.g., line, candlestick, or bar) for each asset. The chart should update dynamically in real time to reflect changes in the underlying datasets, providing a clear visual comparison of asset performance, correlations, and trends. This feature will enable advanced charting and analytical capabilities, helping users to perform comparative analysis, explore relationships between assets, and practice multi-asset portfolio evaluation in a simulated environment.
 
-The entire platform boasts a unified, premium sleek "White-Theme" across all interfaces and utilizes low-level HTML5 canvas APIs for high-performance stock charting and analysis graphs.
+3. The application should include an advanced portfolio simulation system that allows users to simulate buying and selling stocks using randomly generated market data, without involving real money. The system should dynamically track each user’s portfolio value, individual asset performance, and overall profit or loss in real time as simulated trades are executed. Users should be able to perform buy and sell actions, specify quantities, and view updated holdings along with cost basis, unrealized gains or losses, and realized returns after each transaction. The portfolio should also display asset allocation through visual breakdowns, showing how investments are distributed across different stocks. To deepen the simulation experience, the system should account for variables such as transaction costs, trade history, and price fluctuations over time, providing users with a realistic and educational trading environment.
 
-## Core Features
-1. **Interactive Dashboard**: A minimalist, high-level overview wrapper displaying total financial health, integrated beautifully with Next.js navigation capabilities.
-2. **Real-time Portfolio Simulation**: Buy, sell, and manage virtual asset positions. Track dynamic P&L on assets powered by live random-walk algorithms. 
-3. **Multi-Asset Live Charts (Canvas)**: Performant multi-asset rendering engines written natively in `canvas` Context APIs, displaying Line, Bar, and Candlestick OHLC charts.
-4. **Algorithmic Pattern Recognition Engine**: 
-   - Uses bespoke recursive functions to scan stock movement streams to detect 'Hammer', 'Morning Star', and 'Engulfing' candlestick structures in real-time. 
-   - Automatic visual highlights via dynamic UI triangles and detailed tooltips.
-5. **Algorithmic Backtesting Strategy Builder**: 
-   - An advanced backtest generator where you can overlay custom Bollinger Bands, SMAs, EMAs, and RSI logic seamlessly. 
-   - Provides historical execution breakdowns in a beautiful log trace.
-6. **Detailed Analytics Engine**: Generates 4 simultaneous parallel canvases tracking complex standard deviation distributions, RSI bounds, multi-asset mean reversion calculations, and volume histograms.
+4. The platform should include a Candlestick Pattern Recognition feature that automatically identifies and highlights common candlestick patterns, such as hammer, doji, and engulfing patterns, based on the randomly generated market data. Detected patterns should be visually marked on the charts, with tooltips or labels providing the pattern name and brief explanation, helping users understand its potential market implications. The system should update in real time as new data points are generated and allow users to filter or highlight specific patterns for easier analysis. By incorporating this feature, the platform will simulate the analytical capabilities of professional trading platforms, enabling users to practice pattern recognition, test strategies, and gain deeper insights into price behavior in a hands-on, educational environment.
 
-## Deployment & Development
+5. The platform should allow users to create and customize their own trading indicators, such as Bollinger Bands, Moving Averages, or other technical tools, and apply simple trading strategies to randomly generated market data. Users should be able to define rules like, for example, “Buy when the price crosses the 50-day moving average” or “Sell when RSI exceeds 70,” and see how these strategies would perform in simulated conditions. The system should dynamically update charts and portfolio performance based on the applied strategies, providing real-time feedback on profit/loss, trade execution, and overall portfolio impact. This feature will enable users to experiment with different approaches, deepen their understanding of market mechanics, and actively engage with data in a hands-on, educational trading environment.
 
-First, make sure Firebase is correctly configured and the environment variables matched.
-Then, run the development server locally:
+6. The platform should feature an advanced data analytics dashboard that visualizes key financial indicators derived from randomly generated market data, providing users with deeper analytical insights beyond basic charts. The dashboard should calculate and display professional metrics such as moving averages, price volatility, and Relative Strength Index (RSI) for each data set. Users must be able to customize the dashboard by selecting which indicators to display, adjusting time ranges, and toggling metrics on or off based on their analysis needs. All indicators should update dynamically in real time as data changes, and the dashboard should present insights in a clear, intuitive layout that helps users better understand trends, momentum, and risk, thereby enhancing the platform’s analytical depth and usability.
 
-```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to explore the dashboard.
-
-## Technical Architecture
-- **Framework:** Next.js 16 (App Router)
-- **Design System:** TailwindCSS V4 (Sleek Slate-50 custom white-theme implementation)
-- **Component Stack:** React 19 functional async handling, zero third-party graph library dependencies internally (all HTML Canvas logic is proprietary custom-coded).
-- **Backend Storage:** Firebase Authentication & Firestore (secure state syncing across devices).
